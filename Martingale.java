@@ -1,4 +1,5 @@
 import java.lang.Math;
+import java.util.Scanner;
 
 /*
  * Model of the Martingale algorithm, a gambling method
@@ -23,20 +24,29 @@ public class Martingale {
         
         return balance;
     }
+    //Runs the simulation multiple times and returns the average profit/loss
     public double Iterate(double wager, double balance, double chance, int iterations) {
-        double totalBalance = balance;
-        while (iterations > 0 && totalBalance - wager > 0) {
+        double[] sum = new double[iterations];
+        double average = 0;
+        for (int i = 0; i < iterations; i++) {
             Martingale a = new Martingale();
-            totalBalance = a.letsGoGambling(wager, totalBalance, chance);
+            sum[i] = a.letsGoGambling(wager, balance, chance) - balance;
             iterations--;
         }
-        return totalBalance;
+        for (double i : sum) {
+            average += i;
+        }
+        average = average / iterations;
+        return average;
     }
 
     public static void main(String[] args) {
         Martingale a = new Martingale();
+        Scanner b = new Scanner(System.in);
+        System.out.println("Enter the amount of times you want to try (higher is more accurate): ");
+        int c = b.nextInt();
+        b.close();
         //Chance is 0.49 because, at a casino, the house is always benefitted
-        double b = a.Iterate(1, 1000, 0.49, 10000);
-        System.out.println("Final balance: " + b + "$");
+        System.out.println("Average return: " + a.Iterate(1, 100, 0.49, c) + "$");
     }
 }

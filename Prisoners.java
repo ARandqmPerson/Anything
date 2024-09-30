@@ -101,7 +101,6 @@ public class Prisoners
         System.out.println(freq.toString());
     }
     public static void main(String[] args) {
-        
         Prisoners h = new Prisoners();
         h.Iterate(10000);
     }
