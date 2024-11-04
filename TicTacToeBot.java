@@ -8,13 +8,12 @@ import java.util.HashMap;
  */
 public class TicTacToeBot {
     MoveTree start;
-    int player;
+    int givenPlayer;
     
     public TicTacToeBot() {
-        start = new MoveTree(0, 0, null);
+        start = new MoveTree(0, null, new TicTacToe());
     }
-    //Given a set of moves, goes to that MoveTree
-    //which has the current move and the set of possible moves
+    
     public MoveTree goToTree(int[] z) {
         MoveTree current = start;
         for (int i : z) {
@@ -25,20 +24,19 @@ public class TicTacToeBot {
     }
 
     public class MoveTree {
+
         HashMap<Integer, MoveTree> possible;
         MoveTree previous;
         TicTacToe ttt;
-        int result;
-        int place;
-        int rating;
         int[] moves;
+        int result;
+        int rating;
 
-        public MoveTree(int p, int r, MoveTree pr) {
-            place = p;
+        public MoveTree(int r, MoveTree pr, TicTacToe t) {
+            ttt = t;
             result = r;
             previous = pr;
             possible = new HashMap<>();
-            ttt = new TicTacToe();
             /* 
              * If there was a previous move, copies the moves
              * of the previous MoveTree and leaves a spot open
@@ -81,12 +79,10 @@ public class TicTacToeBot {
                          * records the move, gets added to the possible list, and
                          * the method iterates again.
                          */
-                        MoveTree temp = new MoveTree(place, result, this);
-                        temp.ttt = ttt.copy();
+                        MoveTree temp = new MoveTree(result, this, ttt.copy());
                         temp.ttt.move(i);
                         temp.moves[temp.moves.length - 1] = i;
                         possible.put(i, temp);
-                        temp.place = i;
                         temp.addPaths();
                     }
                 }
@@ -99,31 +95,33 @@ public class TicTacToeBot {
          * a rating, 1 or 2, depending on the outcome --
          * If either player can win by force after this move,
          * it will receive the same rating --
-         * Otherwise, the move will be rated 0. 
-         * Most moves will be rated 0 because they will lead to
-         * a draw with optimal play.
+         * Otherwise, the move will be rated 0.
          * 
          * @return rating of this move
          */
         public int rateMove() {
-            //Checks whether this move ends the game
-            if (result == 3) return 0;
-            if (result == 2) return 2;
-            if (result == 1) return 1;
-            //Checks possible moves
-            if (result == 0) {
-                for (int i = 1; i <= 9; i++) {
-                    if (possible.containsKey(i)) {
-                        //If the current player can win by force,
-                        //that's the rating of the move
-                        int a = possible.get(i).rateMove();
-                        if (a == player) return a;
+            
+            if (result == 3) {rating = 0; return rating;}
+            if (result == 2) {rating = 2; return rating;}
+            if (result == 1) {rating = 1; return rating;}
+            
+            rating = 0;
+            boolean trapped = true; 
+            for (int i = 1; i <= 9; i++) {
+                if (possible.containsKey(i)) {
+                    int a = possible.get(i).rateMove();
+                    if (a == ttt.player) {
+                        rating = ttt.player;
+                        trapped = false;
                     }
+                    if (a == 0) trapped = false;
                 }
             }
-            return 0;
+            if (trapped) rating = ttt.nextPlayer;
+        
+            return rating;
         }
-
+        
         public String toString() {
             String s = new String("Moves so far:\n[");
             s += moves[0];
@@ -135,17 +133,19 @@ public class TicTacToeBot {
             else {
                 s += "Possible moves:\n";
                 for (int i = 1; i <= 9; i++) {
-                    if (possible.containsKey(i)) s += "["+possible.get(i).place+"]";
+                    if (possible.containsKey(i)) s += "["+i+"]";
                 }
             }
             return s;
         }   
     }
+
     //Testing
     public static void main(String[] args) {
         TicTacToeBot test = new TicTacToeBot();
         test.start.addPaths();
-        int[] path = {2, 4, 5};
-        System.out.println(test.goToTree(path).toString());
+        int[] path = {1, 4};
+        MoveTree testTree = test.goToTree(path);
+        System.out.println(testTree.rateMove()+"\n"+testTree.ttt+"\n"+testTree.toString());
     }
 }
