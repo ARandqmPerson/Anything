@@ -1,4 +1,6 @@
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.lang.Math;
 /*
  * A TicTacToeBot that can calculate every possible
  * game of TicTacToe and save them into a MoveTree
@@ -8,13 +10,14 @@ import java.util.HashMap;
  */
 public class TicTacToeBot {
     MoveTree start;
-    int givenPlayer;
     
-    public TicTacToeBot() {
-        start = new MoveTree(0, null, new TicTacToe());
+    public TicTacToeBot(TicTacToe t) {
+        start = new MoveTree(null, t);
+        start.addPaths();
+        start.rateMove();
     }
     
-    public MoveTree goToTree(int[] z) {
+    public MoveTree goToTree(ArrayList<Integer> z) {
         MoveTree current = start;
         for (int i : z) {
             if (!current.possible.containsKey(i)) return null;
@@ -28,31 +31,20 @@ public class TicTacToeBot {
         HashMap<Integer, MoveTree> possible;
         MoveTree previous;
         TicTacToe ttt;
-        int[] moves;
         int result;
         int rating;
 
-        public MoveTree(int r, MoveTree pr, TicTacToe t) {
+        public MoveTree(MoveTree pr, TicTacToe t) {
             ttt = t;
-            result = r;
+            result = t.winner;
             previous = pr;
             possible = new HashMap<>();
-            /* 
-             * If there was a previous move, copies the moves
-             * of the previous MoveTree and leaves a spot open
-             * for the current move (which should be filled after
-             * the constructor is called),
-             * otherwise makes an empty array
-            */
             if (pr != null) {
-                moves = new int[pr.moves.length + 1];
-                for (int i = 0; i < pr.moves.length; i++) {
-                    moves[i] = pr.moves[i];
+                for (Integer i : pr.ttt.moves) {
+                    ttt.moves.add(i);
                 }
             }
-            else {
-                moves = new int[0];
-            }
+            else ttt.moves = new ArrayList<>();
         }
         /*
         * Recursively records every possible outcome
@@ -79,9 +71,9 @@ public class TicTacToeBot {
                          * records the move, gets added to the possible list, and
                          * the method iterates again.
                          */
-                        MoveTree temp = new MoveTree(result, this, ttt.copy());
+                        MoveTree temp = new MoveTree(this, ttt.copy());
                         temp.ttt.move(i);
-                        temp.moves[temp.moves.length - 1] = i;
+                        temp.ttt.moves.add(i);
                         possible.put(i, temp);
                         temp.addPaths();
                     }
@@ -121,12 +113,37 @@ public class TicTacToeBot {
         
             return rating;
         }
+        /*
+         * Will pick the best-rated move, and
+         * picks randomly if there's a tie to
+         * prevent the same game over and over
+         * 
+         * @return the chosen move
+         */
+        public int chooseMove() {
+            ArrayList<Integer> temp = new ArrayList<>();
+            int max = ttt.nextPlayer;
+            
+            for (int i = 1; i <= 9; i++) {
+                if (possible.containsKey(i)) {
+                    temp.add(i);
+                    if (possible.get(i).rating == ttt.player) max = ttt.player;
+                    if (max != ttt.player && possible.get(i).rating == 0) max = 0;
+                }
+            }
+            
+            for (int i = temp.size() - 1; i >= 0; i--) {
+                if (possible.get(temp.get(i)).rating != max) temp.remove(i);
+            }
+
+            return temp.get((int)(Math.random() * temp.size()));
+        }
         
         public String toString() {
             String s = new String("Moves so far:\n[");
-            s += moves[0];
-            for (int i = 1; i < moves.length; i++) {
-                s += ", "+moves[i];
+            s += ttt.moves.get(0);
+            for (int i = 1; i < ttt.moves.size(); i++) {
+                s += ", "+ttt.moves.get(i);
             }
             s += "]\n";
             if (possible.isEmpty()) s += "No possible moves, game is over";
@@ -142,10 +159,10 @@ public class TicTacToeBot {
 
     //Testing
     public static void main(String[] args) {
-        TicTacToeBot test = new TicTacToeBot();
-        test.start.addPaths();
-        int[] path = {1, 4};
+        TicTacToeBot test = new TicTacToeBot(new TicTacToe());
+        ArrayList<Integer> path = new ArrayList<>();
+        path.add(2); path.add(4);
         MoveTree testTree = test.goToTree(path);
-        System.out.println(testTree.rateMove()+"\n"+testTree.ttt+"\n"+testTree.toString());
+        System.out.println(testTree.rating+"\n"+testTree.ttt+"\n"+testTree.toString());
     }
 }

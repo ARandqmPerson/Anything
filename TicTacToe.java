@@ -1,14 +1,17 @@
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.ArrayList;
 import java.util.InputMismatchException;
 
 public class TicTacToe {
     
     public Map<Integer, Square> grid;
+    public ArrayList<Integer> moves;
+    public int nextPlayer;
     public int winner;
     public int player;
-    public int nextPlayer;
+
 
     public TicTacToe() {
         reset();
@@ -18,6 +21,7 @@ public class TicTacToe {
         winner = 0;
         player = 1;
         nextPlayer = 2;
+        moves = new ArrayList<>();
         grid = new HashMap<>();
         for (int i = 1; i <= 9; i++) {
             grid.put(i, new Square());
@@ -36,8 +40,8 @@ public class TicTacToe {
     /*
      * If the Square that corresponds to the
      * given number exists and is empty, that Square is now
-     * taken by the current player, and it's the
-     * next player's turn.
+     * taken by the current player, adds to move list, 
+     * and it's the next player's turn.
      * 
      * @return whether the method succeeded
      */
@@ -50,6 +54,7 @@ public class TicTacToe {
             int temp = player;
             player = nextPlayer;
             nextPlayer = temp;
+            moves.add(n);
         } 
         else return false;
         return true; 
@@ -85,6 +90,74 @@ Reference:
         else {
             System.out.println("Player " + winner + " wins!");
         }
+
+        scan.close();
+    }
+
+    public void playAgainstBot() {
+        System.out.println("Generating tree...");
+        Scanner scan = new Scanner(System.in);
+        TicTacToeBot bot = new TicTacToeBot(this);
+
+        boolean check = false;
+        System.out.println("Player 1 or 2?");
+        while (check == false) {
+            String q = scan.nextLine();
+            if (q.equals("1")) {
+                check = true;
+                System.out.println(
+"""
+|TIC-TAC-TOE|
+Reference:
+[1][2][3]
+[4][5][6]
+[7][8][9] """);
+                System.out.println("Player 1: ");
+                try {
+                    if(move(scan.nextInt()))
+                        System.out.println(toString());
+                    else System.out.println("Invalid input");
+                }
+                catch (InputMismatchException e) {
+                    System.out.println("Invalid input");
+                    scan.nextLine();
+                }
+            }
+            else if (q.equals("2")) {
+                check = true;
+                System.out.println(toString());
+            }
+            else {
+                System.out.println("Type '1' or '2':");
+            }
+        }
+        while (winner == 0) {
+            System.out.println("Bot's move:");
+            move(bot.goToTree(moves).chooseMove());
+            System.out.println(toString());
+
+            check = false;
+            while (winner == 0 && check == false) {
+                System.out.println("Player " + player + ": ");
+                try {
+                    if(move(scan.nextInt())) {
+                        System.out.println(toString());
+                        check = true;
+                    }
+                    else {
+                        System.out.println("Invalid input");
+                    }
+                    
+                }
+                catch (InputMismatchException e) {
+                    System.out.println("Invalid input");
+                    scan.nextLine();
+                }
+            }
+        }
+
+        if (winner == 3) System.out.println("Draw!");
+        else System.out.println("Player " + winner + " wins!");
 
         scan.close();
     }
@@ -146,6 +219,7 @@ Reference:
 
     public static void main(String[] args) {
         TicTacToe game = new TicTacToe();
-        game.playUserInput();
+        // game.playUserInput();
+        game.playAgainstBot();
     }
 }
